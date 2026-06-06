@@ -2,11 +2,11 @@
   "crons": [
     {
       "path": "/api/seed-matches?token=${CRON_SECRET}",
-      "schedule": "0 4 * * *"
+      "schedule": "0 3 * * *"
     },
     {
       "path": "/api/update-scores?token=${CRON_SECRET}",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 6 * * *"
     }
   ]
 }
