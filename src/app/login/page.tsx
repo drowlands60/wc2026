@@ -33,16 +33,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-900 via-green-800 to-emerald-900">
-      <div className="w-full max-w-md p-8 bg-white rounded-2xl shadow-2xl">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
+      <div className="w-full max-w-md p-8 bg-[#1e2d3d] rounded-2xl shadow-2xl border border-gray-700/50">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">⚽ WC 2026</h1>
-          <p className="text-gray-600 mt-2">Sign in to make your predictions</p>
+          <h1 className="text-3xl font-bold text-emerald-400">⚽ WC 2026</h1>
+          <p className="text-gray-400 mt-2">Sign in to make your predictions</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-300">
               Email
             </label>
             <input
@@ -51,12 +51,12 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+              className="mt-1 block w-full rounded-lg border border-gray-600 bg-[#0f1923] text-white px-3 py-2 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-300">
               Password
             </label>
             <input
@@ -65,26 +65,26 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+              className="mt-1 block w-full rounded-lg border border-gray-600 bg-[#0f1923] text-white px-3 py-2 shadow-sm focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
             />
           </div>
 
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{error}</p>
+            <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 p-3 rounded-lg">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-3 px-4 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-[#1e2d3d] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-[0_0_15px_rgba(0,230,118,0.2)]"
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
+        <p className="mt-6 text-center text-sm text-gray-400">
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-green-600 hover:text-green-700 font-medium">
+          <Link href="/signup" className="text-emerald-400 hover:text-emerald-300 font-medium">
             Sign up
           </Link>
         </p>
