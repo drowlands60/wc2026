@@ -43,6 +43,9 @@ export function PredictionForm({
   const [scotlandWarning, setScotlandWarning] = useState(false);
   const supabase = createClient();
   const saveTimeout = useRef<NodeJS.Timeout | null>(null);
+  const initialHome = useRef(prediction?.home_score?.toString() ?? "");
+  const initialAway = useRef(prediction?.away_score?.toString() ?? "");
+  const hasUserEdited = useRef(false);
 
   const matchDate = new Date(match.match_date);
   const formattedDate = matchDate.toLocaleDateString("en-GB", {
@@ -54,6 +57,13 @@ export function PredictionForm({
   });
 
   useEffect(() => {
+    if (!hasUserEdited.current) {
+      if (homeScore !== initialHome.current || awayScore !== initialAway.current) {
+        hasUserEdited.current = true;
+      } else {
+        return;
+      }
+    }
     if (isLocked) return;
     if (homeScore === "" || awayScore === "") return;
 
