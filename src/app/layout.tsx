@@ -21,13 +21,10 @@ export default async function RootLayout({
     user = data.user;
   }
 
-  // Force a fake user for testing
-  const testUser = user ?? { email: "test@test.com", id: "test-user-123" };
-
   return (
     <html lang="en">
       <body className="min-h-screen">
-        <Navbar user={testUser ? { email: testUser.email, id: testUser.id } : null} />
+        <Navbar user={user ? { email: user.email, id: user.id } : null} />
         <main>{children}</main>
         <DaleFactPopup />
       </body>
