@@ -48,21 +48,33 @@ export default async function LeaderboardPage() {
               </tr>
             </thead>
             <tbody>
-              {leaderboard.map((entry, index) => (
+              {leaderboard.map((entry, index) => {
+                // Compute rank with ties: same rank for same points
+                let rank = 1;
+                for (let i = 0; i < index; i++) {
+                  if (leaderboard[i].total_points !== entry.total_points) {
+                    rank = i + 1;
+                  }
+                }
+                if (index > 0 && leaderboard[index - 1].total_points !== entry.total_points) {
+                  rank = index + 1;
+                }
+
+                return (
                 <tr
                   key={entry.user_id}
                   className={`border-b border-gray-700/30 last:border-0 ${
-                    index < 3 ? "bg-emerald-500/5" : ""
+                    rank <= 3 ? "bg-emerald-500/5" : ""
                   }`}
                 >
                   <td className="px-4 py-3">
                     <span className={`font-bold ${
-                      index === 0 ? "text-yellow-400 text-lg" :
-                      index === 1 ? "text-gray-300 text-lg" :
-                      index === 2 ? "text-amber-500 text-lg" :
+                      rank === 1 ? "text-yellow-400 text-lg" :
+                      rank === 2 ? "text-gray-300 text-lg" :
+                      rank === 3 ? "text-amber-500 text-lg" :
                       "text-gray-500"
                     }`}>
-                      {index + 1}
+                      {rank}
                     </span>
                   </td>
                   <td className="px-4 py-3 font-medium text-gray-100">
@@ -88,7 +100,8 @@ export default async function LeaderboardPage() {
                     {entry.matches_scored}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

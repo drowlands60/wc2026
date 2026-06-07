@@ -86,6 +86,8 @@ export async function GET(request: Request) {
       const homeCode = (apiMatch.homeTeam as Record<string, unknown>)?.tla as string | undefined;
       const awayCode = (apiMatch.awayTeam as Record<string, unknown>)?.tla as string | undefined;
       const score = apiMatch.score as Record<string, unknown> | undefined;
+      // Use regularTime (90 mins + stoppage) to ignore extra time and penalties
+      const regularTime = score?.regularTime as Record<string, unknown> | undefined;
       const fullTime = score?.fullTime as Record<string, unknown> | undefined;
 
       const status = apiMatch.status === "FINISHED"
@@ -98,8 +100,8 @@ export async function GET(request: Request) {
         external_id: apiMatch.id,
         home_team_id: homeCode ? teamIdMap.get(homeCode) ?? null : null,
         away_team_id: awayCode ? teamIdMap.get(awayCode) ?? null : null,
-        home_score: (fullTime?.home as number) ?? null,
-        away_score: (fullTime?.away as number) ?? null,
+        home_score: (regularTime?.home as number) ?? (fullTime?.home as number) ?? null,
+        away_score: (regularTime?.away as number) ?? (fullTime?.away as number) ?? null,
         match_date: apiMatch.utcDate,
         stage: apiMatch.stage,
         group_name: (apiMatch.group as string)?.replace("GROUP_", "") ?? null,

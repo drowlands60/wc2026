@@ -70,8 +70,9 @@ export async function GET(request: Request) {
         ? "LIVE"
         : "SCHEDULED";
 
-      const homeScore = apiMatch.score?.fullTime?.home ?? null;
-      const awayScore = apiMatch.score?.fullTime?.away ?? null;
+      // Use regularTime (90 mins + stoppage) to ignore extra time and penalties
+      const homeScore = apiMatch.score?.regularTime?.home ?? apiMatch.score?.fullTime?.home ?? null;
+      const awayScore = apiMatch.score?.regularTime?.away ?? apiMatch.score?.fullTime?.away ?? null;
 
       updateRows.push({
         id: existing.id,
