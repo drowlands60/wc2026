@@ -44,10 +44,26 @@ export async function GET(request: Request) {
     const data = await response.json();
     const matches = data.matches ?? [];
 
+    // Fetch all existing matches in one query
+    const { data: existingMatches } = await supabase
+      .from("matches")
+      .select("id, external_id, status");
+
+    const matchMap = new Map<number, { id: string; status: string }>();
+    for (const m of existingMatches ?? []) {
+      matchMap.set(m.external_id, { id: m.id, status: m.status });
+    }
+
     let updated = 0;
     let scored = 0;
+    const now = new Date().toISOString();
+    const updateRows: { id: string; status: string; home_score: number | null; away_score: number | null; updated_at: string }[] = [];
+    const matchesToScore: string[] = [];
 
     for (const apiMatch of matches) {
+      const existing = matchMap.get(apiMatch.id);
+      if (!existing) continue;
+
       const status = apiMatch.status === "FINISHED"
         ? "FINISHED"
         : apiMatch.status === "IN_PLAY" || apiMatch.status === "PAUSED"
@@ -57,34 +73,30 @@ export async function GET(request: Request) {
       const homeScore = apiMatch.score?.fullTime?.home ?? null;
       const awayScore = apiMatch.score?.fullTime?.away ?? null;
 
-      // Update match in our database
-      const { data: existingMatch } = await supabase
-        .from("matches")
-        .select("id, status")
-        .eq("external_id", apiMatch.id)
-        .single();
+      updateRows.push({
+        id: existing.id,
+        status,
+        home_score: homeScore,
+        away_score: awayScore,
+        updated_at: now,
+      });
+      updated++;
 
-      if (existingMatch) {
-        const wasNotFinished = existingMatch.status !== "FINISHED";
-
-        await supabase
-          .from("matches")
-          .update({
-            status,
-            home_score: homeScore,
-            away_score: awayScore,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", existingMatch.id);
-
-        updated++;
-
-        // If match just finished, calculate points
-        if (wasNotFinished && status === "FINISHED" && homeScore !== null) {
-          await supabase.rpc("score_match", { p_match_id: existingMatch.id });
-          scored++;
-        }
+      // If match just finished, queue it for scoring
+      if (existing.status !== "FINISHED" && status === "FINISHED" && homeScore !== null) {
+        matchesToScore.push(existing.id);
       }
+    }
+
+    // Batch update all matches
+    if (updateRows.length > 0) {
+      await supabase.from("matches").upsert(updateRows, { onConflict: "id" });
+    }
+
+    // Score newly finished matches (must be sequential since RPC may have side effects)
+    for (const matchId of matchesToScore) {
+      await supabase.rpc("score_match", { p_match_id: matchId });
+      scored++;
     }
 
     return NextResponse.json({
