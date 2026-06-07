@@ -64,29 +64,29 @@ export async function GET(request: Request) {
     }
 
     const teamsArray = Array.from(teamsMap.values());
-    for (const team of teamsArray) {
-      await supabase.from("teams").upsert(
-        {
-          name: team.name,
-          code: team.tla,
-          group_name: team.group,
-          flag_url: team.crest,
-        },
-        { onConflict: "code" }
-      );
+    await supabase.from("teams").upsert(
+      teamsArray.map((team) => ({
+        name: team.name,
+        code: team.tla,
+        group_name: team.group,
+        flag_url: team.crest,
+      })),
+      { onConflict: "code" }
+    );
+
+    // Fetch all teams in one query to build a code->id map
+    const { data: allTeams } = await supabase.from("teams").select("id, code");
+    const teamIdMap = new Map<string, string>();
+    for (const t of allTeams ?? []) {
+      teamIdMap.set(t.code, t.id);
     }
 
-    // Upsert matches
-    let seeded = 0;
-
-    for (const apiMatch of matches) {
-      const { data: homeTeam } = apiMatch.homeTeam?.tla
-        ? await supabase.from("teams").select("id").eq("code", apiMatch.homeTeam.tla).single()
-        : { data: null };
-
-      const { data: awayTeam } = apiMatch.awayTeam?.tla
-        ? await supabase.from("teams").select("id").eq("code", apiMatch.awayTeam.tla).single()
-        : { data: null };
+    // Upsert matches in a single batch
+    const matchRows = matches.map((apiMatch: Record<string, unknown>) => {
+      const homeCode = (apiMatch.homeTeam as Record<string, unknown>)?.tla as string | undefined;
+      const awayCode = (apiMatch.awayTeam as Record<string, unknown>)?.tla as string | undefined;
+      const score = apiMatch.score as Record<string, unknown> | undefined;
+      const fullTime = score?.fullTime as Record<string, unknown> | undefined;
 
       const status = apiMatch.status === "FINISHED"
         ? "FINISHED"
@@ -94,23 +94,22 @@ export async function GET(request: Request) {
         ? "LIVE"
         : "SCHEDULED";
 
-      await supabase.from("matches").upsert(
-        {
-          external_id: apiMatch.id,
-          home_team_id: homeTeam?.id ?? null,
-          away_team_id: awayTeam?.id ?? null,
-          home_score: apiMatch.score?.fullTime?.home ?? null,
-          away_score: apiMatch.score?.fullTime?.away ?? null,
-          match_date: apiMatch.utcDate,
-          stage: apiMatch.stage,
-          group_name: apiMatch.group?.replace("GROUP_", "") ?? null,
-          status,
-          matchday: apiMatch.matchday,
-        },
-        { onConflict: "external_id" }
-      );
-      seeded++;
-    }
+      return {
+        external_id: apiMatch.id,
+        home_team_id: homeCode ? teamIdMap.get(homeCode) ?? null : null,
+        away_team_id: awayCode ? teamIdMap.get(awayCode) ?? null : null,
+        home_score: (fullTime?.home as number) ?? null,
+        away_score: (fullTime?.away as number) ?? null,
+        match_date: apiMatch.utcDate,
+        stage: apiMatch.stage,
+        group_name: (apiMatch.group as string)?.replace("GROUP_", "") ?? null,
+        status,
+        matchday: apiMatch.matchday,
+      };
+    });
+
+    await supabase.from("matches").upsert(matchRows, { onConflict: "external_id" });
+    const seeded = matchRows.length;
 
     return NextResponse.json({
       success: true,
