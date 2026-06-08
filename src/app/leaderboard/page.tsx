@@ -49,16 +49,13 @@ export default async function LeaderboardPage() {
             </thead>
             <tbody>
               {leaderboard.map((entry, index) => {
-                // Compute rank with ties: same rank for same points
-                let rank = 1;
-                for (let i = 0; i < index; i++) {
-                  if (leaderboard[i].total_points !== entry.total_points) {
-                    rank = i + 1;
-                  }
-                }
-                if (index > 0 && leaderboard[index - 1].total_points !== entry.total_points) {
-                  rank = index + 1;
-                }
+                // Compute rank with ties: first person gets number, ties show "="
+                const rank = index === 0 ? 1 :
+                  leaderboard[index - 1].total_points === entry.total_points
+                    ? leaderboard.findIndex(e => e.total_points === entry.total_points) + 1
+                    : index + 1;
+                const isTied = index > 0 && leaderboard[index - 1].total_points === entry.total_points;
+                const displayRank = isTied ? "=" : rank;
 
                 return (
                 <tr
@@ -74,7 +71,7 @@ export default async function LeaderboardPage() {
                       rank === 3 ? "text-amber-500 text-lg" :
                       "text-gray-500"
                     }`}>
-                      {rank}
+                      {displayRank}
                     </span>
                   </td>
                   <td className="px-4 py-3 font-medium text-gray-100">
