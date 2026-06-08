@@ -22,6 +22,8 @@ export function Navbar({ user }: { user: { email?: string; id: string } | null }
     { href: "/leaderboard", label: "Leaderboard" },
     { href: "/matches", label: "Matches" },
     { href: "/resources/fifa-rankings", label: "FIFA Rankings" },
+    { href: "/submit-ticket", label: "Submit a Ticket" },
+    { href: "https://members.parliament.uk/member/4607/contact", label: "Complaints", external: true },
   ];
 
   const logoHref = user ? "/resources/fifa-rankings" : "/";
@@ -46,6 +48,7 @@ export function Navbar({ user }: { user: { email?: string; id: string } | null }
                   <Link
                     key={link.href}
                     href={link.href}
+                    {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                     className={`hover:text-emerald-400 transition-colors ${
                       pathname === link.href || pathname.startsWith(link.href + "/") ? "text-emerald-400 font-semibold" : "text-gray-300"
                     }`}
@@ -97,6 +100,7 @@ export function Navbar({ user }: { user: { email?: string; id: string } | null }
                   <Link
                     key={link.href}
                     href={link.href}
+                    {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                     onClick={() => setMobileOpen(false)}
                     className={`block py-2 px-3 rounded-lg transition-colors ${
                       pathname === link.href ? "text-emerald-400 bg-emerald-500/10 font-semibold" : "text-gray-300 hover:text-emerald-400 hover:bg-emerald-500/5"
