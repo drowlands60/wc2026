@@ -1,6 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import fixturesData from "@/data/fixtures.json";
+import { GroupToggle } from "@/components/GroupToggle";
+
+const STAGE_LABELS: Record<string, string> = {
+  GROUP_STAGE: "Group Stage",
+  LAST_32: "Round of 32",
+  LAST_16: "Round of 16",
+  QUARTER_FINALS: "Quarter-Finals",
+  SEMI_FINALS: "Semi-Finals",
+  THIRD_PLACE: "Third Place",
+  FINAL: "Final",
+};
 
 const FALLBACK_MATCHES = fixturesData.matches.map((m) => ({
   id: m.id,
@@ -14,7 +25,9 @@ const FALLBACK_MATCHES = fixturesData.matches.map((m) => ({
   away_team: m.awayTeam?.tla ? { name: m.awayTeam.name, code: m.awayTeam.tla } : null,
 }));
 
-export default async function MatchesPage() {
+export default async function MatchesPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
+  const params = await searchParams;
+  const viewMode = params.view === "group" ? "group" : "date";
   let matches: any[] = FALLBACK_MATCHES;
 
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -36,21 +49,39 @@ export default async function MatchesPage() {
     if (data?.length) matches = data;
   }
 
-  const grouped = (matches ?? []).reduce(
-    (acc: Record<string, any[]>, match: any) => {
-      const date = new Date(match.match_date);
-      const key = date.toLocaleDateString("en-GB", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      });
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(match);
-      return acc;
-    },
-    {} as Record<string, any[]>
-  );
+  let grouped: Record<string, any[]>;
+
+  if (viewMode === "group") {
+    grouped = (matches ?? []).reduce(
+      (acc: Record<string, any[]>, match: any) => {
+        const key = match.group_name
+          ? `Group ${match.group_name}`
+          : STAGE_LABELS[match.stage] ?? match.stage;
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(match);
+        return acc;
+      },
+      {} as Record<string, any[]>
+    );
+  } else {
+    grouped = (matches ?? []).reduce(
+      (acc: Record<string, any[]>, match: any) => {
+        const date = new Date(match.match_date);
+        const key = date.toLocaleDateString("en-GB", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(match);
+        return acc;
+      },
+      {} as Record<string, any[]>
+    );
+  }
+
+  const sectionKeys = Object.keys(grouped);
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -60,7 +91,8 @@ export default async function MatchesPage() {
           Form guide →
         </Link>
       </div>
-      <p className="text-gray-400 mb-8">Full schedule and results</p>
+      <p className="text-gray-400 mb-4">Full schedule and results</p>
+      <GroupToggle current={viewMode} sections={viewMode === "group" ? sectionKeys : undefined} />
 
       {Object.keys(grouped).length === 0 && (
         <div className="text-center py-12 bg-[#1e2d3d] rounded-xl border border-gray-700/50">
@@ -69,7 +101,7 @@ export default async function MatchesPage() {
       )}
 
       {Object.entries(grouped).map(([stage, stageMatches]) => (
-        <div key={stage} className="mb-8">
+        <div key={stage} id={stage.replace(/\s+/g, "-").toLowerCase()} className="mb-8 scroll-mt-24">
           <h2 className="text-xl font-semibold text-emerald-400 mb-4">{stage}</h2>
           <div className="space-y-2">
             {(stageMatches as any[]).map((match: any) => {
