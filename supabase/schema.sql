@@ -70,14 +70,14 @@ create table public.predictions (
 -- Enable RLS
 alter table public.predictions enable row level security;
 
-create policy "Users can view all predictions after match is finished"
+create policy "Users can view all predictions after match is locked"
   on public.predictions for select
   using (
     auth.uid() = user_id
     or exists (
       select 1 from public.matches
       where matches.id = predictions.match_id
-      and matches.status = 'FINISHED'
+      and (matches.status = 'FINISHED' or now() >= date_trunc('day', matches.match_date at time zone 'UTC'))
     )
   );
 

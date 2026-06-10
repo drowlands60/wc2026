@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useState, useEffect, useRef } from "react";
+import { AllPredictions } from "./AllPredictions";
 
 interface Match {
   id: number;
@@ -23,14 +24,23 @@ interface Prediction {
   points: number | null;
 }
 
+interface UserPrediction {
+  display_name: string;
+  home_score: number;
+  away_score: number;
+  points: number | null;
+}
+
 export function PredictionForm({
   match,
   prediction,
   isLocked,
+  allPredictions,
 }: {
   match: Match;
   prediction: Prediction | undefined;
   isLocked: boolean;
+  allPredictions?: UserPrediction[];
 }) {
   const [homeScore, setHomeScore] = useState<string>(
     prediction?.home_score?.toString() ?? ""
@@ -209,6 +219,14 @@ export function PredictionForm({
           )}
         </div>
       </div>
+
+      {isLocked && allPredictions && allPredictions.length > 0 && (
+        <AllPredictions
+          predictions={allPredictions}
+          homeTeam={match.home_team?.code ?? "Home"}
+          awayTeam={match.away_team?.code ?? "Away"}
+        />
+      )}
 
       {scotlandWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">

@@ -35,6 +35,7 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
 
   let matches: any[] = FALLBACK_MATCHES;
   let predictionsMap = new Map<number, any>();
+  let allPredictionsMap = new Map<number, any[]>();
 
   if (supabaseConfigured) {
     const supabase = await createClient();
@@ -69,6 +70,36 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
     predictionsMap = new Map(
       predictions?.map((p: any) => [p.match_id, p]) ?? []
     );
+
+    // Fetch all users' predictions for locked matches
+    const now = new Date();
+    const lockedMatchIds = matches
+      .filter((m: any) => {
+        const matchDate = new Date(m.match_date);
+        const lockDate = new Date(matchDate.getFullYear(), matchDate.getMonth(), matchDate.getDate());
+        return m.status !== "SCHEDULED" || now >= lockDate;
+      })
+      .map((m: any) => m.id);
+
+    if (lockedMatchIds.length > 0) {
+      const { data: allPreds } = await supabase
+        .from("predictions")
+        .select("match_id, home_score, away_score, points, user:profiles!predictions_user_id_fkey(display_name)")
+        .in("match_id", lockedMatchIds);
+
+      if (allPreds) {
+        for (const p of allPreds) {
+          const list = allPredictionsMap.get(p.match_id) ?? [];
+          list.push({
+            display_name: (p.user as any)?.display_name ?? "Unknown",
+            home_score: p.home_score,
+            away_score: p.away_score,
+            points: p.points,
+          });
+          allPredictionsMap.set(p.match_id, list);
+        }
+      }
+    }
   }
 
   let grouped: Record<string, any[]>;
@@ -148,6 +179,7 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
                     match={match}
                     prediction={prediction}
                     isLocked={isLocked}
+                    allPredictions={isLocked ? allPredictionsMap.get(match.id) : undefined}
                   />
                 </div>
               );
