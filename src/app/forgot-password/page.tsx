@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 export default function ForgotPasswordPage() {
@@ -10,6 +11,8 @@ export default function ForgotPasswordPage() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
+  const searchParams = useSearchParams();
+  const linkExpired = searchParams.get("error") === "link_expired";
 
   async function handleReset(e: React.FormEvent) {
     e.preventDefault();
@@ -58,6 +61,11 @@ export default function ForgotPasswordPage() {
         </div>
 
         <form onSubmit={handleReset} className="space-y-4">
+          {linkExpired && (
+            <p className="text-sm text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 p-3 rounded-lg">
+              Your password reset link has expired. Please request a new one.
+            </p>
+          )}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-300">
               Email
