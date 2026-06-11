@@ -40,7 +40,7 @@ export function AllPredictions({
       </button>
 
       {open && (
-        <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
+        <div className="mt-2 space-y-1">
           <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 text-xs text-gray-500 px-2 pb-1 border-b border-gray-700/30">
             <span>Player</span>
             <span className="text-right">{homeTeam}</span>
