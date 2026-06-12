@@ -81,6 +81,15 @@ export async function GET(request: Request) {
       teamIdMap.set(t.code, t.id);
     }
 
+    // Fetch existing matches to preserve values when API returns null
+    const { data: existingMatches } = await supabase
+      .from("matches")
+      .select("external_id, home_team_id, away_team_id, home_score, away_score");
+    const existingMap = new Map<number, { home_team_id: string | null; away_team_id: string | null; home_score: number | null; away_score: number | null }>();
+    for (const m of existingMatches ?? []) {
+      existingMap.set(m.external_id, m);
+    }
+
     // Upsert matches in a single batch
     const matchRows = matches.map((apiMatch: Record<string, unknown>) => {
       const homeCode = (apiMatch.homeTeam as Record<string, unknown>)?.tla as string | undefined;
@@ -96,12 +105,19 @@ export async function GET(request: Request) {
         ? "LIVE"
         : "SCHEDULED";
 
+      const existing = existingMap.get(apiMatch.id as number);
+
+      const homeTeamId = homeCode ? teamIdMap.get(homeCode) ?? null : null;
+      const awayTeamId = awayCode ? teamIdMap.get(awayCode) ?? null : null;
+      const homeScore = (regularTime?.home as number) ?? (fullTime?.home as number) ?? null;
+      const awayScore = (regularTime?.away as number) ?? (fullTime?.away as number) ?? null;
+
       return {
         external_id: apiMatch.id,
-        home_team_id: homeCode ? teamIdMap.get(homeCode) ?? null : null,
-        away_team_id: awayCode ? teamIdMap.get(awayCode) ?? null : null,
-        home_score: (regularTime?.home as number) ?? (fullTime?.home as number) ?? null,
-        away_score: (regularTime?.away as number) ?? (fullTime?.away as number) ?? null,
+        home_team_id: homeTeamId ?? existing?.home_team_id ?? null,
+        away_team_id: awayTeamId ?? existing?.away_team_id ?? null,
+        home_score: homeScore ?? existing?.home_score ?? null,
+        away_score: awayScore ?? existing?.away_score ?? null,
         match_date: apiMatch.utcDate,
         stage: apiMatch.stage,
         group_name: (apiMatch.group as string)?.replace("GROUP_", "") ?? null,

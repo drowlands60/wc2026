@@ -47,11 +47,11 @@ export async function GET(request: Request) {
     // Fetch all existing matches in one query
     const { data: existingMatches } = await supabase
       .from("matches")
-      .select("id, external_id, status");
+      .select("id, external_id, status, home_score, away_score");
 
-    const matchMap = new Map<number, { id: string; status: string }>();
+    const matchMap = new Map<number, { id: string; status: string; home_score: number | null; away_score: number | null }>();
     for (const m of existingMatches ?? []) {
-      matchMap.set(m.external_id, { id: m.id, status: m.status });
+      matchMap.set(m.external_id, { id: m.id, status: m.status, home_score: m.home_score, away_score: m.away_score });
     }
 
     let updated = 0;
@@ -77,8 +77,8 @@ export async function GET(request: Request) {
       updateRows.push({
         id: existing.id,
         status,
-        home_score: homeScore,
-        away_score: awayScore,
+        home_score: homeScore ?? existing.home_score ?? null,
+        away_score: awayScore ?? existing.away_score ?? null,
         updated_at: now,
       });
       updated++;
