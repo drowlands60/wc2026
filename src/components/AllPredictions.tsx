@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 interface UserPrediction {
+  user_id: string;
   display_name: string;
   home_score: number;
   away_score: number;
@@ -13,14 +14,20 @@ export function AllPredictions({
   predictions,
   homeTeam,
   awayTeam,
+  currentUserId,
 }: {
   predictions: UserPrediction[];
   homeTeam: string;
   awayTeam: string;
+  currentUserId?: string;
 }) {
   const [open, setOpen] = useState(false);
 
-  if (!predictions.length) return null;
+  const filtered = currentUserId
+    ? predictions.filter((p) => p.user_id !== currentUserId)
+    : predictions;
+
+  if (!filtered.length) return null;
 
   return (
     <div className="mt-3 border-t border-gray-700/50 pt-2">
@@ -36,7 +43,7 @@ export function AllPredictions({
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
-        <span>All predictions ({predictions.length})</span>
+        <span>All predictions ({filtered.length})</span>
       </button>
 
       {open && (
@@ -47,7 +54,7 @@ export function AllPredictions({
             <span></span>
             <span>{awayTeam}</span>
           </div>
-          {predictions.map((p, i) => (
+          {filtered.map((p, i) => (
             <div
               key={i}
               className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 items-center text-sm px-2 py-1 rounded hover:bg-gray-700/20"

@@ -36,6 +36,7 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
   let matches: any[] = FALLBACK_MATCHES;
   let predictionsMap = new Map<number, any>();
   let allPredictionsMap = new Map<number, any[]>();
+  let currentUserId: string | undefined;
 
   if (supabaseConfigured) {
     const supabase = await createClient();
@@ -44,6 +45,7 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
     if (!user) {
       redirect("/login");
     }
+    currentUserId = user.id;
 
     const { data: dbMatches } = await supabase
       .from("matches")
@@ -84,13 +86,14 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
     if (lockedMatchIds.length > 0) {
       const { data: allPreds } = await supabase
         .from("predictions")
-        .select("match_id, home_score, away_score, points, user:profiles!predictions_user_id_fkey(display_name)")
+        .select("match_id, user_id, home_score, away_score, points, user:profiles!predictions_user_id_fkey(display_name)")
         .in("match_id", lockedMatchIds);
 
       if (allPreds) {
         for (const p of allPreds) {
           const list = allPredictionsMap.get(p.match_id) ?? [];
           list.push({
+            user_id: p.user_id,
             display_name: (p.user as any)?.display_name ?? "Unknown",
             home_score: p.home_score,
             away_score: p.away_score,
@@ -180,6 +183,7 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
                     prediction={prediction}
                     isLocked={isLocked}
                     allPredictions={isLocked ? allPredictionsMap.get(match.id) : undefined}
+                    currentUserId={currentUserId}
                   />
                 </div>
               );

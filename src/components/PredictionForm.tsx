@@ -25,6 +25,7 @@ interface Prediction {
 }
 
 interface UserPrediction {
+  user_id: string;
   display_name: string;
   home_score: number;
   away_score: number;
@@ -36,11 +37,13 @@ export function PredictionForm({
   prediction,
   isLocked,
   allPredictions,
+  currentUserId,
 }: {
   match: Match;
   prediction: Prediction | undefined;
   isLocked: boolean;
   allPredictions?: UserPrediction[];
+  currentUserId?: string;
 }) {
   const [homeScore, setHomeScore] = useState<string>(
     prediction?.home_score?.toString() ?? ""
@@ -225,6 +228,7 @@ export function PredictionForm({
           predictions={allPredictions}
           homeTeam={match.home_team?.code ?? "Home"}
           awayTeam={match.away_team?.code ?? "Away"}
+          currentUserId={currentUserId}
         />
       )}
 
