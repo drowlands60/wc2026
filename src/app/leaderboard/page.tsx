@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 const DEMO_LEADERBOARD = [
   { user_id: "1", display_name: "FootballFan99", avatar_url: null, total_points: 14, matches_scored: 6, exact_scores: 2, correct_differences: 2, correct_results: 2, total_predictions: 6 },
   { user_id: "2", display_name: "PredictionKing", avatar_url: null, total_points: 11, matches_scored: 6, exact_scores: 1, correct_differences: 2, correct_results: 3, total_predictions: 6 },

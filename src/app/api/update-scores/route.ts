@@ -58,7 +58,6 @@ export async function GET(request: Request) {
     let scored = 0;
     const now = new Date().toISOString();
     const updateRows: { id: string; status: string; home_score: number | null; away_score: number | null; updated_at: string }[] = [];
-    const matchesToScore: string[] = [];
 
     for (const apiMatch of matches) {
       const existing = matchMap.get(apiMatch.id);
@@ -82,11 +81,6 @@ export async function GET(request: Request) {
         updated_at: now,
       });
       updated++;
-
-      // If match just finished, queue it for scoring
-      if (existing.status !== "FINISHED" && status === "FINISHED" && homeScore !== null) {
-        matchesToScore.push(existing.id);
-      }
     }
 
     // Batch update all matches
@@ -94,10 +88,18 @@ export async function GET(request: Request) {
       await supabase.from("matches").upsert(updateRows, { onConflict: "id" });
     }
 
-    // Score newly finished matches (must be sequential since RPC may have side effects)
-    for (const matchId of matchesToScore) {
-      await supabase.rpc("score_match", { p_match_id: matchId });
-      scored++;
+    // Score ALL finished matches that have scores — score_match is idempotent
+    // so re-scoring already-scored matches is harmless and ensures nothing is missed
+    const { data: finishedMatches } = await supabase
+      .from("matches")
+      .select("id")
+      .eq("status", "FINISHED")
+      .not("home_score", "is", null)
+      .not("away_score", "is", null);
+
+    for (const match of finishedMatches ?? []) {
+      const { error } = await supabase.rpc("score_match", { p_match_id: match.id });
+      if (!error) scored++;
     }
 
     return NextResponse.json({
