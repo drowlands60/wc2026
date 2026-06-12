@@ -42,8 +42,8 @@ export default async function MatchesPage({ searchParams }: { searchParams: Prom
         status,
         home_score,
         away_score,
-        home_team:teams!matches_home_team_id_fkey(name, code),
-        away_team:teams!matches_away_team_id_fkey(name, code)
+        home_team:teams!matches_home_team_id_fkey(name, code, flag_url),
+        away_team:teams!matches_away_team_id_fkey(name, code, flag_url)
       `)
       .order("match_date", { ascending: true }) as any;
     if (data?.length) matches = data;
@@ -129,15 +129,21 @@ export default async function MatchesPage({ searchParams }: { searchParams: Prom
                     )}
                   </div>
                   <div className="flex items-center justify-center gap-4 mt-2">
-                    <span className="flex-1 text-right font-medium text-gray-100">
+                    <span className="flex-1 flex items-center justify-end gap-2 font-medium text-gray-100">
                       {(match.home_team as any)?.name ?? "TBD"}
+                      {(match.home_team as any)?.flag_url && (
+                        <img src={(match.home_team as any).flag_url} alt="" className="w-6 h-4 object-contain" />
+                      )}
                     </span>
                     <span className="font-bold text-lg min-w-[60px] text-center text-white">
                       {match.status === "FINISHED" || match.status === "LIVE"
                         ? `${match.home_score} - ${match.away_score}`
                         : "vs"}
                     </span>
-                    <span className="flex-1 text-left font-medium text-gray-100">
+                    <span className="flex-1 flex items-center gap-2 font-medium text-gray-100">
+                      {(match.away_team as any)?.flag_url && (
+                        <img src={(match.away_team as any).flag_url} alt="" className="w-6 h-4 object-contain" />
+                      )}
                       {(match.away_team as any)?.name ?? "TBD"}
                     </span>
                   </div>

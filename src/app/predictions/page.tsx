@@ -58,8 +58,8 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
         matchday,
         home_score,
         away_score,
-        home_team:teams!matches_home_team_id_fkey(id, name, code),
-        away_team:teams!matches_away_team_id_fkey(id, name, code)
+        home_team:teams!matches_home_team_id_fkey(id, name, code, flag_url),
+        away_team:teams!matches_away_team_id_fkey(id, name, code, flag_url)
       `)
       .order("match_date", { ascending: true }) as any;
 

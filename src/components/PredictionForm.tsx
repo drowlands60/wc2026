@@ -12,8 +12,8 @@ interface Match {
   status: string;
   home_score: number | null;
   away_score: number | null;
-  home_team: { id: number; name: string; code: string } | null;
-  away_team: { id: number; name: string; code: string } | null;
+  home_team: { id: number; name: string; code: string; flag_url?: string } | null;
+  away_team: { id: number; name: string; code: string; flag_url?: string } | null;
 }
 
 interface Prediction {
@@ -171,12 +171,15 @@ export function PredictionForm({
 
       <div className="flex items-center justify-between gap-4">
         {/* Home team */}
-        <div className="flex-1 text-right">
+        <div className="flex-1 flex items-center justify-end gap-2">
           <span className="font-medium text-gray-100">
             {match.home_team?.name ?? "TBD"}
           </span>
+          {match.home_team?.flag_url && (
+            <img src={match.home_team.flag_url} alt="" className="w-6 h-4 object-contain" />
+          )}
           {match.status === "FINISHED" && (
-            <span className="ml-2 font-bold text-lg text-white">{match.home_score}</span>
+            <span className="font-bold text-lg text-white">{match.home_score}</span>
           )}
         </div>
 
@@ -213,13 +216,16 @@ export function PredictionForm({
         </div>
 
         {/* Away team */}
-        <div className="flex-1">
+        <div className="flex-1 flex items-center gap-2">
+          {match.status === "FINISHED" && (
+            <span className="font-bold text-lg text-white">{match.away_score}</span>
+          )}
+          {match.away_team?.flag_url && (
+            <img src={match.away_team.flag_url} alt="" className="w-6 h-4 object-contain" />
+          )}
           <span className="font-medium text-gray-100">
             {match.away_team?.name ?? "TBD"}
           </span>
-          {match.status === "FINISHED" && (
-            <span className="ml-2 font-bold text-lg text-white">{match.away_score}</span>
-          )}
         </div>
       </div>
 
