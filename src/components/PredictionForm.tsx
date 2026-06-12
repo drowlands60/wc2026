@@ -1,7 +1,8 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 import { AllPredictions } from "./AllPredictions";
 
 interface Match {
@@ -69,40 +70,7 @@ export function PredictionForm({
     minute: "2-digit",
   });
 
-  useEffect(() => {
-    if (!hasUserEdited.current) {
-      if (homeScore !== initialHome.current || awayScore !== initialAway.current) {
-        hasUserEdited.current = true;
-      } else {
-        return;
-      }
-    }
-    if (isLocked) return;
-    if (homeScore === "" || awayScore === "") return;
-
-    const h = parseInt(homeScore);
-    const a = parseInt(awayScore);
-    if (isNaN(h) || isNaN(a)) return;
-
-    // Check if Scotland is predicted to win
-    const scotlandIsHome = match.home_team?.code === "SCO" || match.home_team?.name === "Scotland";
-    const scotlandIsAway = match.away_team?.code === "SCO" || match.away_team?.name === "Scotland";
-    if ((scotlandIsHome && h > a) || (scotlandIsAway && a > h)) {
-      setScotlandWarning(true);
-      return;
-    }
-
-    if (saveTimeout.current) clearTimeout(saveTimeout.current);
-    saveTimeout.current = setTimeout(() => {
-      handleSave();
-    }, 800);
-
-    return () => {
-      if (saveTimeout.current) clearTimeout(saveTimeout.current);
-    };
-  }, [homeScore, awayScore]);
-
-  async function handleSave() {
+  const handleSave = useCallback(async () => {
     if (homeScore === "" || awayScore === "") return;
     setSaving(true);
 
@@ -121,7 +89,59 @@ export function PredictionForm({
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     }
+  }, [homeScore, awayScore, match.id, supabase]);
+
+  function checkScotlandWarning(home: string, away: string): boolean {
+    if (home === "" || away === "") return false;
+    const h = parseInt(home);
+    const a = parseInt(away);
+    if (isNaN(h) || isNaN(a)) return false;
+    const scotlandIsHome = match.home_team?.code === "SCO" || match.home_team?.name === "Scotland";
+    const scotlandIsAway = match.away_team?.code === "SCO" || match.away_team?.name === "Scotland";
+    return (scotlandIsHome && h > a) || (scotlandIsAway && a > h);
   }
+
+  function handleHomeChange(value: string) {
+    setHomeScore(value);
+    if (checkScotlandWarning(value, awayScore)) {
+      setScotlandWarning(true);
+    }
+  }
+
+  function handleAwayChange(value: string) {
+    setAwayScore(value);
+    if (checkScotlandWarning(homeScore, value)) {
+      setScotlandWarning(true);
+    }
+  }
+
+  useEffect(() => {
+    if (!hasUserEdited.current) {
+      if (homeScore !== initialHome.current || awayScore !== initialAway.current) {
+        hasUserEdited.current = true;
+      } else {
+        return;
+      }
+    }
+    if (isLocked) return;
+    if (homeScore === "" || awayScore === "") return;
+
+    const h = parseInt(homeScore);
+    const a = parseInt(awayScore);
+    if (isNaN(h) || isNaN(a)) return;
+
+    // If Scotland warning is active, don't auto-save
+    if (scotlandWarning) return;
+
+    if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    saveTimeout.current = setTimeout(() => {
+      handleSave();
+    }, 800);
+
+    return () => {
+      if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    };
+  }, [homeScore, awayScore, isLocked, scotlandWarning, handleSave]);
 
   function getPointsBadge() {
     if (prediction?.points === null || prediction?.points === undefined) return null;
@@ -176,7 +196,7 @@ export function PredictionForm({
             {match.home_team?.name ?? "TBD"}
           </span>
           {match.home_team?.flag_url && (
-            <img src={match.home_team.flag_url} alt="" className="w-6 h-4 object-contain" />
+            <Image src={match.home_team.flag_url} alt="" width={24} height={16} className="w-6 h-4 object-contain" />
           )}
           {match.status === "FINISHED" && (
             <span className="font-bold text-lg text-white">{match.home_score}</span>
@@ -190,7 +210,7 @@ export function PredictionForm({
             min="0"
             max="20"
             value={homeScore}
-            onChange={(e) => setHomeScore(e.target.value)}
+            onChange={(e) => handleHomeChange(e.target.value)}
             disabled={isLocked}
             className={`w-12 h-10 text-center text-lg font-bold border-2 rounded-lg bg-[#0f1923] text-white focus:border-emerald-400 focus:outline-none focus:shadow-[0_0_10px_rgba(0,230,118,0.3)] disabled:bg-gray-800 disabled:text-gray-500 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
               saving ? "border-yellow-400" : saved ? "border-emerald-400" : "border-gray-600"
@@ -203,7 +223,7 @@ export function PredictionForm({
             min="0"
             max="20"
             value={awayScore}
-            onChange={(e) => setAwayScore(e.target.value)}
+            onChange={(e) => handleAwayChange(e.target.value)}
             disabled={isLocked}
             className={`w-12 h-10 text-center text-lg font-bold border-2 rounded-lg bg-[#0f1923] text-white focus:border-emerald-400 focus:outline-none focus:shadow-[0_0_10px_rgba(0,230,118,0.3)] disabled:bg-gray-800 disabled:text-gray-500 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
               saving ? "border-yellow-400" : saved ? "border-emerald-400" : "border-gray-600"
@@ -221,7 +241,7 @@ export function PredictionForm({
             <span className="font-bold text-lg text-white">{match.away_score}</span>
           )}
           {match.away_team?.flag_url && (
-            <img src={match.away_team.flag_url} alt="" className="w-6 h-4 object-contain" />
+            <Image src={match.away_team.flag_url} alt="" width={24} height={16} className="w-6 h-4 object-contain" />
           )}
           <span className="font-medium text-gray-100">
             {match.away_team?.name ?? "TBD"}

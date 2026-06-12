@@ -1,7 +1,26 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import Image from "next/image";
 import fixturesData from "@/data/fixtures.json";
 import { GroupToggle } from "@/components/GroupToggle";
+
+interface Team {
+  name: string;
+  code: string;
+  flag_url?: string;
+}
+
+interface Match {
+  id: string | number;
+  match_date: string;
+  stage: string;
+  group_name: string | null;
+  status: string;
+  home_score: number | null;
+  away_score: number | null;
+  home_team: Team | null;
+  away_team: Team | null;
+}
 
 const STAGE_LABELS: Record<string, string> = {
   GROUP_STAGE: "Group Stage",
@@ -28,7 +47,7 @@ const FALLBACK_MATCHES = fixturesData.matches.map((m) => ({
 export default async function MatchesPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
   const params = await searchParams;
   const viewMode = params.view === "group" ? "group" : "date";
-  let matches: any[] = FALLBACK_MATCHES;
+  let matches: Match[] = FALLBACK_MATCHES;
 
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     const supabase = await createClient();
@@ -45,15 +64,21 @@ export default async function MatchesPage({ searchParams }: { searchParams: Prom
         home_team:teams!matches_home_team_id_fkey(name, code, flag_url),
         away_team:teams!matches_away_team_id_fkey(name, code, flag_url)
       `)
-      .order("match_date", { ascending: true }) as any;
-    if (data?.length) matches = data;
+      .order("match_date", { ascending: true });
+    if (data?.length) {
+      matches = data.map((d) => ({
+        ...d,
+        home_team: Array.isArray(d.home_team) ? d.home_team[0] ?? null : d.home_team,
+        away_team: Array.isArray(d.away_team) ? d.away_team[0] ?? null : d.away_team,
+      })) as Match[];
+    }
   }
 
-  let grouped: Record<string, any[]>;
+  let grouped: Record<string, Match[]>;
 
   if (viewMode === "group") {
     grouped = (matches ?? []).reduce(
-      (acc: Record<string, any[]>, match: any) => {
+      (acc: Record<string, Match[]>, match: Match) => {
         const key = match.group_name
           ? `Group ${match.group_name}`
           : STAGE_LABELS[match.stage] ?? match.stage;
@@ -61,11 +86,11 @@ export default async function MatchesPage({ searchParams }: { searchParams: Prom
         acc[key].push(match);
         return acc;
       },
-      {} as Record<string, any[]>
+      {} as Record<string, Match[]>
     );
   } else {
     grouped = (matches ?? []).reduce(
-      (acc: Record<string, any[]>, match: any) => {
+      (acc: Record<string, Match[]>, match: Match) => {
         const date = new Date(match.match_date);
         const key = date.toLocaleDateString("en-GB", {
           weekday: "long",
@@ -77,7 +102,7 @@ export default async function MatchesPage({ searchParams }: { searchParams: Prom
         acc[key].push(match);
         return acc;
       },
-      {} as Record<string, any[]>
+      {} as Record<string, Match[]>
     );
   }
 
@@ -104,7 +129,7 @@ export default async function MatchesPage({ searchParams }: { searchParams: Prom
         <div key={stage} id={stage.replace(/\s+/g, "-").toLowerCase()} className="mb-8 scroll-mt-24">
           <h2 className="text-xl font-semibold text-emerald-400 mb-4">{stage}</h2>
           <div className="space-y-2">
-            {(stageMatches as any[]).map((match: any) => {
+            {stageMatches.map((match) => {
               const matchDate = new Date(match.match_date);
               return (
                 <div key={match.id} className="bg-[#1e2d3d] rounded-lg border border-gray-700/50 p-4 hover:border-emerald-500/30 transition-colors">
@@ -130,21 +155,21 @@ export default async function MatchesPage({ searchParams }: { searchParams: Prom
                   </div>
                   <div className="flex items-center justify-center gap-4 mt-2">
                     <span className="flex-1 flex items-center justify-end gap-2 font-medium text-gray-100">
-                      {(match.home_team as any)?.name ?? "TBD"}
-                      {(match.home_team as any)?.flag_url && (
-                        <img src={(match.home_team as any).flag_url} alt="" className="w-6 h-4 object-contain" />
+                      {match.home_team?.name ?? "TBD"}
+                      {match.home_team?.flag_url && (
+                        <Image src={match.home_team.flag_url} alt="" width={24} height={16} className="w-6 h-4 object-contain" />
                       )}
                     </span>
-                    <span className="font-bold text-lg min-w-[60px] text-center text-white">
+                    <span className="font-bold text-lg min-w-15 text-center text-white">
                       {match.status === "FINISHED" || match.status === "LIVE"
                         ? `${match.home_score} - ${match.away_score}`
                         : "vs"}
                     </span>
                     <span className="flex-1 flex items-center gap-2 font-medium text-gray-100">
-                      {(match.away_team as any)?.flag_url && (
-                        <img src={(match.away_team as any).flag_url} alt="" className="w-6 h-4 object-contain" />
+                      {match.away_team?.flag_url && (
+                        <Image src={match.away_team.flag_url} alt="" width={24} height={16} className="w-6 h-4 object-contain" />
                       )}
-                      {(match.away_team as any)?.name ?? "TBD"}
+                      {match.away_team?.name ?? "TBD"}
                     </span>
                   </div>
                 </div>

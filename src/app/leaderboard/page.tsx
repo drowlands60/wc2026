@@ -3,7 +3,19 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-const DEMO_LEADERBOARD = [
+interface LeaderboardEntry {
+  user_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  total_points: number;
+  matches_scored: number;
+  exact_scores: number;
+  correct_differences: number;
+  correct_results: number;
+  total_predictions: number;
+}
+
+const DEMO_LEADERBOARD: LeaderboardEntry[] = [
   { user_id: "1", display_name: "FootballFan99", avatar_url: null, total_points: 14, matches_scored: 6, exact_scores: 2, correct_differences: 2, correct_results: 2, total_predictions: 6 },
   { user_id: "2", display_name: "PredictionKing", avatar_url: null, total_points: 11, matches_scored: 6, exact_scores: 1, correct_differences: 2, correct_results: 3, total_predictions: 6 },
   { user_id: "3", display_name: "GoalGuesser", avatar_url: null, total_points: 9, matches_scored: 6, exact_scores: 1, correct_differences: 1, correct_results: 3, total_predictions: 6 },
@@ -12,7 +24,7 @@ const DEMO_LEADERBOARD = [
 ];
 
 export default async function LeaderboardPage() {
-  let leaderboard: any[] = DEMO_LEADERBOARD;
+  let leaderboard: LeaderboardEntry[] = DEMO_LEADERBOARD;
 
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     const supabase = await createClient();

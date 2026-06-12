@@ -5,6 +5,43 @@ import { AutoScrollToEditable } from "@/components/AutoScrollToEditable";
 import { GroupToggle } from "@/components/GroupToggle";
 import fixturesData from "@/data/fixtures.json";
 
+interface Team {
+  id: number;
+  name: string;
+  code: string;
+  flag_url?: string;
+}
+
+interface Match {
+  id: number;
+  match_date: string;
+  stage: string;
+  group_name: string | null;
+  status: string;
+  matchday?: number | null;
+  home_score: number | null;
+  away_score: number | null;
+  home_team: Team | null;
+  away_team: Team | null;
+}
+
+interface Prediction {
+  id: number;
+  match_id: number;
+  home_score: number;
+  away_score: number;
+  points: number | null;
+  user_id: string;
+}
+
+interface UserPrediction {
+  user_id: string;
+  display_name: string;
+  home_score: number;
+  away_score: number;
+  points: number | null;
+}
+
 const STAGE_LABELS: Record<string, string> = {
   GROUP_STAGE: "Group Stage",
   LAST_32: "Round of 32",
@@ -33,9 +70,9 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
   const viewMode = params.view === "group" ? "group" : "date";
   const supabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  let matches: any[] = FALLBACK_MATCHES;
-  let predictionsMap = new Map<number, any>();
-  let allPredictionsMap = new Map<number, any[]>();
+  let matches: Match[] = FALLBACK_MATCHES;
+  let predictionsMap = new Map<number, Prediction>();
+  const allPredictionsMap = new Map<number, UserPrediction[]>();
   let currentUserId: string | undefined;
 
   if (supabaseConfigured) {
@@ -61,27 +98,33 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
         home_team:teams!matches_home_team_id_fkey(id, name, code, flag_url),
         away_team:teams!matches_away_team_id_fkey(id, name, code, flag_url)
       `)
-      .order("match_date", { ascending: true }) as any;
+      .order("match_date", { ascending: true });
 
     const { data: predictions } = await supabase
       .from("predictions")
       .select("*")
       .eq("user_id", user.id);
 
-    matches = dbMatches?.length ? dbMatches : FALLBACK_MATCHES;
+    if (dbMatches?.length) {
+      matches = dbMatches.map((d) => ({
+        ...d,
+        home_team: Array.isArray(d.home_team) ? d.home_team[0] ?? null : d.home_team,
+        away_team: Array.isArray(d.away_team) ? d.away_team[0] ?? null : d.away_team,
+      })) as Match[];
+    }
     predictionsMap = new Map(
-      predictions?.map((p: any) => [p.match_id, p]) ?? []
+      predictions?.map((p) => [p.match_id, p as Prediction]) ?? []
     );
 
     // Fetch all users' predictions for locked matches
     const now = new Date();
     const lockedMatchIds = matches
-      .filter((m: any) => {
+      .filter((m) => {
         const matchDate = new Date(m.match_date);
         const lockDate = new Date(matchDate.getFullYear(), matchDate.getMonth(), matchDate.getDate());
         return m.status !== "SCHEDULED" || now >= lockDate;
       })
-      .map((m: any) => m.id);
+      .map((m) => m.id);
 
     if (lockedMatchIds.length > 0) {
       const { data: allPreds } = await supabase
@@ -92,9 +135,11 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
       if (allPreds) {
         for (const p of allPreds) {
           const list = allPredictionsMap.get(p.match_id) ?? [];
+          const user = p.user as { display_name: string } | { display_name: string }[] | null;
+          const displayName = Array.isArray(user) ? user[0]?.display_name ?? "Unknown" : user?.display_name ?? "Unknown";
           list.push({
             user_id: p.user_id,
-            display_name: (p.user as any)?.display_name ?? "Unknown",
+            display_name: displayName,
             home_score: p.home_score,
             away_score: p.away_score,
             points: p.points,
@@ -105,11 +150,11 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
     }
   }
 
-  let grouped: Record<string, any[]>;
+  let grouped: Record<string, Match[]>;
 
   if (viewMode === "group") {
     grouped = (matches ?? []).reduce(
-      (acc: Record<string, any[]>, match: any) => {
+      (acc: Record<string, Match[]>, match: Match) => {
         const key = match.group_name
           ? `Group ${match.group_name}`
           : STAGE_LABELS[match.stage] ?? match.stage;
@@ -117,11 +162,11 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
         acc[key].push(match);
         return acc;
       },
-      {} as Record<string, any[]>
+      {} as Record<string, Match[]>
     );
   } else {
     grouped = (matches ?? []).reduce(
-      (acc: Record<string, any[]>, match: any) => {
+      (acc: Record<string, Match[]>, match: Match) => {
         const date = new Date(match.match_date);
         const key = date.toLocaleDateString("en-GB", {
           weekday: "long",
@@ -133,13 +178,13 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
         acc[key].push(match);
         return acc;
       },
-      {} as Record<string, any[]>
+      {} as Record<string, Match[]>
     );
   }
 
   // Find the first editable match id
   const now = new Date();
-  const firstEditableMatchId = (matches ?? []).find((match: any) => {
+  const firstEditableMatchId = (matches ?? []).find((match) => {
     const matchDate = new Date(match.match_date);
     const lockDate = new Date(matchDate.getFullYear(), matchDate.getMonth(), matchDate.getDate());
     return match.status === "SCHEDULED" && now < lockDate;
@@ -169,7 +214,7 @@ export default async function PredictionsPage({ searchParams }: { searchParams: 
             {stage}
           </h2>
           <div className="space-y-3">
-            {(stageMatches as any[]).map((match: any) => {
+            {stageMatches.map((match) => {
               const prediction = predictionsMap.get(match.id);
               // Lock predictions at midnight (start of day) on match day
               const matchDate = new Date(match.match_date);
