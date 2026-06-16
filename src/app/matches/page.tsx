@@ -167,23 +167,41 @@ export default async function MatchesPage({ searchParams }: { searchParams: Prom
                     )}
                   </div>
                   <div className="flex items-center justify-center gap-4 mt-2">
-                    <span className="flex-1 flex items-center justify-end gap-2 font-medium text-gray-100">
-                      {match.home_team?.name ?? "TBD"}
-                      {match.home_team?.flag_url && (
-                        <Image src={match.home_team.flag_url} alt="" width={24} height={16} className="w-6 h-4 object-contain" />
-                      )}
-                    </span>
+                    {match.home_team?.name === "England" ? (
+                      <a href="https://www.youtube.com/watch?v=RJqimlFcJsM" target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-end gap-2 font-medium text-gray-100 hover:text-emerald-400 transition-colors">
+                        {match.home_team.name}
+                        {match.home_team.flag_url && (
+                          <Image src={match.home_team.flag_url} alt="" width={24} height={16} className="w-6 h-4 object-contain" />
+                        )}
+                      </a>
+                    ) : (
+                      <span className="flex-1 flex items-center justify-end gap-2 font-medium text-gray-100">
+                        {match.home_team?.name ?? "TBD"}
+                        {match.home_team?.flag_url && (
+                          <Image src={match.home_team.flag_url} alt="" width={24} height={16} className="w-6 h-4 object-contain" />
+                        )}
+                      </span>
+                    )}
                     <span className="font-bold text-lg min-w-15 text-center text-white">
                       {match.status === "FINISHED" || match.status === "LIVE"
                         ? `${match.home_score} - ${match.away_score}`
                         : "vs"}
                     </span>
-                    <span className="flex-1 flex items-center gap-2 font-medium text-gray-100">
-                      {match.away_team?.flag_url && (
-                        <Image src={match.away_team.flag_url} alt="" width={24} height={16} className="w-6 h-4 object-contain" />
-                      )}
-                      {match.away_team?.name ?? "TBD"}
-                    </span>
+                    {match.away_team?.name === "England" ? (
+                      <a href="https://www.youtube.com/watch?v=RJqimlFcJsM" target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center gap-2 font-medium text-gray-100 hover:text-emerald-400 transition-colors">
+                        {match.away_team.flag_url && (
+                          <Image src={match.away_team.flag_url} alt="" width={24} height={16} className="w-6 h-4 object-contain" />
+                        )}
+                        {match.away_team.name}
+                      </a>
+                    ) : (
+                      <span className="flex-1 flex items-center gap-2 font-medium text-gray-100">
+                        {match.away_team?.flag_url && (
+                          <Image src={match.away_team.flag_url} alt="" width={24} height={16} className="w-6 h-4 object-contain" />
+                        )}
+                        {match.away_team?.name ?? "TBD"}
+                      </span>
+                    )}
                   </div>
                 </div>
               );

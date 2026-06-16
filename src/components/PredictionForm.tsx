@@ -192,14 +192,25 @@ export function PredictionForm({
       <div className="flex items-center justify-between gap-4">
         {/* Home team */}
         <div className="flex-1 min-w-0 flex items-center justify-end gap-2">
-          <div className="flex flex-col items-end sm:flex-row sm:items-center sm:gap-2 min-w-0">
-            {match.home_team?.flag_url && (
-              <Image src={match.home_team.flag_url} alt="" width={24} height={16} className="w-5 h-3 sm:w-6 sm:h-4 object-contain shrink-0" />
-            )}
-            <span className="font-medium text-xs sm:text-base text-gray-100 truncate max-w-full">
-              {match.home_team?.name ?? "TBD"}
-            </span>
-          </div>
+          {match.home_team?.name === "England" ? (
+            <a href="https://www.youtube.com/watch?v=RJqimlFcJsM" target="_blank" rel="noopener noreferrer" className="flex flex-col items-end sm:flex-row sm:items-center sm:gap-2 min-w-0 hover:text-emerald-400 transition-colors">
+              {match.home_team.flag_url && (
+                <Image src={match.home_team.flag_url} alt="" width={24} height={16} className="w-5 h-3 sm:w-6 sm:h-4 object-contain shrink-0" />
+              )}
+              <span className="font-medium text-xs sm:text-base text-gray-100 truncate max-w-full">
+                {match.home_team.name}
+              </span>
+            </a>
+          ) : (
+            <div className="flex flex-col items-end sm:flex-row sm:items-center sm:gap-2 min-w-0">
+              {match.home_team?.flag_url && (
+                <Image src={match.home_team.flag_url} alt="" width={24} height={16} className="w-5 h-3 sm:w-6 sm:h-4 object-contain shrink-0" />
+              )}
+              <span className="font-medium text-xs sm:text-base text-gray-100 truncate max-w-full">
+                {match.home_team?.name ?? "TBD"}
+              </span>
+            </div>
+          )}
           {match.status === "FINISHED" && (
             <span className="font-bold text-lg text-white shrink-0">{match.home_score}</span>
           )}
@@ -242,14 +253,25 @@ export function PredictionForm({
           {match.status === "FINISHED" && (
             <span className="font-bold text-lg text-white shrink-0">{match.away_score}</span>
           )}
-          <div className="flex flex-col items-start sm:flex-row sm:items-center sm:gap-2 min-w-0">
-            {match.away_team?.flag_url && (
-              <Image src={match.away_team.flag_url} alt="" width={24} height={16} className="w-5 h-3 sm:w-6 sm:h-4 object-contain shrink-0" />
-            )}
-            <span className="font-medium text-xs sm:text-base text-gray-100 truncate max-w-full">
-              {match.away_team?.name ?? "TBD"}
-            </span>
-          </div>
+          {match.away_team?.name === "England" ? (
+            <a href="https://www.youtube.com/watch?v=RJqimlFcJsM" target="_blank" rel="noopener noreferrer" className="flex flex-col items-start sm:flex-row sm:items-center sm:gap-2 min-w-0 hover:text-emerald-400 transition-colors">
+              {match.away_team.flag_url && (
+                <Image src={match.away_team.flag_url} alt="" width={24} height={16} className="w-5 h-3 sm:w-6 sm:h-4 object-contain shrink-0" />
+              )}
+              <span className="font-medium text-xs sm:text-base text-gray-100 truncate max-w-full">
+                {match.away_team.name}
+              </span>
+            </a>
+          ) : (
+            <div className="flex flex-col items-start sm:flex-row sm:items-center sm:gap-2 min-w-0">
+              {match.away_team?.flag_url && (
+                <Image src={match.away_team.flag_url} alt="" width={24} height={16} className="w-5 h-3 sm:w-6 sm:h-4 object-contain shrink-0" />
+              )}
+              <span className="font-medium text-xs sm:text-base text-gray-100 truncate max-w-full">
+                {match.away_team?.name ?? "TBD"}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
