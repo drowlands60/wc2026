@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import fixturesData from "@/data/fixtures.json";
 import { GroupToggle } from "@/components/GroupToggle";
+import { AutoScrollToEditable } from "@/components/AutoScrollToEditable";
 
 interface Team {
   name: string;
@@ -107,9 +108,16 @@ export default async function MatchesPage({ searchParams }: { searchParams: Prom
   }
 
   const sectionKeys = Object.keys(grouped);
+  const now = new Date();
+  const firstUpcomingMatchId = (matches ?? []).find((match) => {
+    const matchDate = new Date(match.match_date);
+    const lockDate = new Date(matchDate.getFullYear(), matchDate.getMonth(), matchDate.getDate());
+    return match.status === "SCHEDULED" && now < lockDate;
+  })?.id;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      {viewMode === "date" && <AutoScrollToEditable />}
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-3xl font-bold text-white">Match Results</h1>
         <Link href="/resources/form-guide" className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
@@ -131,8 +139,13 @@ export default async function MatchesPage({ searchParams }: { searchParams: Prom
           <div className="space-y-2">
             {stageMatches.map((match) => {
               const matchDate = new Date(match.match_date);
+              const isFirstUpcoming = match.id === firstUpcomingMatchId;
               return (
-                <div key={match.id} className="bg-[#1e2d3d] rounded-lg border border-gray-700/50 p-4 hover:border-emerald-500/30 transition-colors">
+                <div
+                  key={match.id}
+                  id={isFirstUpcoming ? "first-editable-match" : undefined}
+                  className="bg-[#1e2d3d] rounded-lg border border-gray-700/50 p-4 hover:border-emerald-500/30 transition-colors"
+                >
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-400">
                       {matchDate.toLocaleDateString("en-GB", {
