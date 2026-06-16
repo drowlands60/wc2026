@@ -29,7 +29,7 @@ export function Navbar({ user }: { user: { email?: string; id: string } | null }
   const logoHref = user ? "/resources/fifa-rankings" : "/";
 
   return (
-    <nav className="bg-[#0a1628] text-white shadow-[0_4px_20px_rgba(0,230,118,0.15)] border-b border-emerald-500/20">
+    <nav className="sticky top-0 z-40 bg-[#0a1628] text-white shadow-[0_4px_20px_rgba(0,230,118,0.15)] border-b border-emerald-500/20">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link href={logoHref} className="text-xl font-bold flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-colors">
