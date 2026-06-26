@@ -145,14 +145,15 @@ export function PredictionForm({
 
   function getPointsBadge() {
     if (prediction?.points === null || prediction?.points === undefined) return null;
-    const colors: Record<number, string> = {
-      3: "bg-yellow-500/20 text-yellow-300 border-yellow-500/50",
-      2: "bg-cyan-500/20 text-cyan-300 border-cyan-500/50",
-      1: "bg-orange-500/20 text-orange-300 border-orange-500/50",
-      0: "bg-red-500/20 text-red-400 border-red-500/50",
-    };
+    const color = prediction.points >= 3
+      ? "bg-yellow-500/20 text-yellow-300 border-yellow-500/50"
+      : prediction.points === 2
+      ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/50"
+      : prediction.points === 1
+      ? "bg-orange-500/20 text-orange-300 border-orange-500/50"
+      : "bg-red-500/20 text-red-400 border-red-500/50";
     return (
-      <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${colors[prediction.points] ?? colors[0]}`}>
+      <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${color}`}>
         {prediction.points}pts
       </span>
     );
@@ -162,13 +163,10 @@ export function PredictionForm({
 
   function getTileColor() {
     if (match.status === "FINISHED" && prediction?.points !== null && prediction?.points !== undefined) {
-      const pointsColors: Record<number, string> = {
-        3: "bg-yellow-500/10 border-yellow-500/40",
-        2: "bg-cyan-500/10 border-cyan-500/30",
-        1: "bg-orange-500/10 border-orange-500/30",
-        0: "bg-red-500/10 border-red-500/20",
-      };
-      return pointsColors[prediction.points] ?? "bg-[#1e2d3d]";
+      if (prediction.points >= 3) return "bg-yellow-500/10 border-yellow-500/40";
+      if (prediction.points === 2) return "bg-cyan-500/10 border-cyan-500/30";
+      if (prediction.points === 1) return "bg-orange-500/10 border-orange-500/30";
+      return "bg-red-500/10 border-red-500/20";
     }
     if (hasPrediction) return "bg-emerald-500/10 border-emerald-500/30";
     return "bg-[#1e2d3d] border-gray-700/50";

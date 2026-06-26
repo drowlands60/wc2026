@@ -120,19 +120,32 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_user();
 
 -- Function to calculate points for a prediction
--- Exact score: 3 points
+-- Exact score: 3 points (+ knockout bonus: R32=+1, R16=+2, QF=+3, SF/3rd=+4, Final=+5)
 -- Correct goal difference: 2 points  
 -- Correct result (win/draw/loss): 1 point
 create or replace function public.calculate_points(
   pred_home integer,
   pred_away integer,
   actual_home integer,
-  actual_away integer
+  actual_away integer,
+  match_stage text default 'GROUP_STAGE'
 ) returns integer as $$
+declare
+  bonus integer := 0;
 begin
   -- Exact score match
   if pred_home = actual_home and pred_away = actual_away then
-    return 3;
+    -- Knockout stage bonus for exact scores
+    bonus := case match_stage
+      when 'LAST_32' then 1
+      when 'LAST_16' then 2
+      when 'QUARTER_FINALS' then 3
+      when 'SEMI_FINALS' then 4
+      when 'THIRD_PLACE' then 4
+      when 'FINAL' then 5
+      else 0
+    end;
+    return 3 + bonus;
   end if;
   
   -- Correct goal difference (and correct result direction)
@@ -155,8 +168,9 @@ returns void as $$
 declare
   v_home_score integer;
   v_away_score integer;
+  v_stage text;
 begin
-  select home_score, away_score into v_home_score, v_away_score
+  select home_score, away_score, stage into v_home_score, v_away_score, v_stage
   from public.matches where id = p_match_id and status = 'FINISHED';
   
   if v_home_score is null then
@@ -164,7 +178,7 @@ begin
   end if;
   
   update public.predictions
-  set points = public.calculate_points(home_score, away_score, v_home_score, v_away_score),
+  set points = public.calculate_points(home_score, away_score, v_home_score, v_away_score, v_stage),
       updated_at = now()
   where match_id = p_match_id;
 end;
@@ -178,7 +192,7 @@ select
   p.avatar_url,
   coalesce(sum(pr.points), 0) as total_points,
   count(pr.id) filter (where pr.points is not null) as matches_scored,
-  count(pr.id) filter (where pr.points = 3) as exact_scores,
+  count(pr.id) filter (where pr.points >= 3) as exact_scores,
   count(pr.id) filter (where pr.points = 2) as correct_differences,
   count(pr.id) filter (where pr.points = 1) as correct_results,
   count(pr.id) as total_predictions
