@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { SurveyPopup } from "@/components/SurveyPopup";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ export default async function LeaderboardPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
+      <SurveyPopup />
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-3xl font-bold text-white">Leaderboard</h1>
         <Link href="/resources/head-to-head" className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
